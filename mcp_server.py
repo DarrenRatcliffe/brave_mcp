@@ -97,13 +97,6 @@ async def event_stream(request: Request, query: str, count: int = 5) -> AsyncGen
 
 @app.post("/search")
 async def search_post(request: Request, body: SearchRequest):
-    """
-    SSE endpoint for Brave Search API.
-
-    Accepts JSON body with `query`, optional `count`, and `language`.
-
-    Streams search results incrementally using SSE.
-    """
     return StreamingResponse(
         event_stream(request, body.query, body.count or 5),
         media_type="text/event-stream",
@@ -121,11 +114,6 @@ async def search_get(
     query: str = Query(..., description="Search query string"),
     count: int = Query(5, ge=1, le=10, description="Number of results to return (1-10)"),
 ):
-    """
-    SSE endpoint for Brave Search API supporting GET with query parameters.
-
-    Streams search results incrementally using SSE.
-    """
     return StreamingResponse(
         event_stream(request, query, count),
         media_type="text/event-stream",

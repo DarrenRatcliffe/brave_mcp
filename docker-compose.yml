@@ -8,6 +8,4 @@ services:
       - "${HOST_PORT:-8000}:8000"
     env_file:
       - .env
-    environment:
-      - BRAVE_API_KEY=${BRAVE_API_KEY}
     restart: unless-stopped
