@@ -1,0 +1,13 @@
+version: "3.9"
+
+services:
+  brave-search-mcp-server:
+    image: brave-search-mcp-server:latest
+    build: .
+    ports:
+      - "${HOST_PORT:-8000}:8000"
+    env_file:
+      - .env
+    environment:
+      - BRAVE_API_KEY=${BRAVE_API_KEY}
+    restart: unless-stopped
