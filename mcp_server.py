@@ -4,7 +4,7 @@ from typing import AsyncGenerator
 
 import httpx
 import logfire
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Query
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -96,7 +96,7 @@ async def event_stream(request: Request, query: str, count: int = 5) -> AsyncGen
 
 
 @app.post("/search")
-async def search(request: Request, body: SearchRequest):
+async def search_post(request: Request, body: SearchRequest):
     """
     SSE endpoint for Brave Search API.
 
@@ -106,6 +106,28 @@ async def search(request: Request, body: SearchRequest):
     """
     return StreamingResponse(
         event_stream(request, body.query, body.count or 5),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
+
+
+@app.get("/search")
+async def search_get(
+    request: Request,
+    query: str = Query(..., description="Search query string"),
+    count: int = Query(5, ge=1, le=10, description="Number of results to return (1-10)"),
+):
+    """
+    SSE endpoint for Brave Search API supporting GET with query parameters.
+
+    Streams search results incrementally using SSE.
+    """
+    return StreamingResponse(
+        event_stream(request, query, count),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",
