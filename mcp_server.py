@@ -7,6 +7,7 @@ import logfire
 from fastapi import FastAPI, Request
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 
 logfire.configure(send_to_logfire='if-token-present')
 
@@ -24,6 +25,12 @@ if not BRAVE_API_KEY:
     raise RuntimeError("BRAVE_API_KEY environment variable is not set.")
 
 PORT = int(os.getenv("PORT", "8000"))
+
+
+class SearchRequest(BaseModel):
+    query: str
+    count: int = 5
+    language: str = "en"
 
 
 async def brave_search(query: str, count: int = 5, language: str = "en") -> dict:
@@ -88,20 +95,17 @@ async def event_stream(request: Request, query: str, count: int = 5) -> AsyncGen
         yield f"event: error\ndata: Exception: {str(e)}\n\n"
 
 
-@app.get("/search")
-async def search(request: Request, query: str, count: int = 5):
+@app.post("/search")
+async def search(request: Request, body: SearchRequest):
     """
     SSE endpoint for Brave Search API.
 
-    Args:
-        query: The search string.
-        count: Number of results to return (max 10).
+    Accepts JSON body with `query`, optional `count`, and `language`.
 
-    Returns:
-        Server Sent Events streaming JSON search results.
+    Streams search results incrementally using SSE.
     """
     return StreamingResponse(
-        event_stream(request, query, count),
+        event_stream(request, body.query, body.count or 5),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",
